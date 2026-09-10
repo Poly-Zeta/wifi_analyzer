@@ -244,6 +244,26 @@ inline bool isZeroMac(const uint8_t mac[6]) {
   return memcmp(mac, z, 6) == 0;
 }
 
+bool hasFtmResponderExtCap_fromIE(const uint8_t* payload, int len) {
+  const int ieStart = 36; // 固定ヘッダ長
+  for (int i = ieStart; i + 2 < len; ) {
+    uint8_t id = payload[i];
+    uint8_t l  = payload[i+1];
+    if (i + 2 + l > len) break;
+    if (id == 127) { // Extended Capabilities IE
+      if (l > 8) {
+        const uint8_t* data = &payload[i+2];
+        // Byte8 bit6 = FTM responder capability
+        return (data[8] & 0x40) != 0;
+      } else {
+        return false;
+      }
+    }
+    i += (2 + l);
+  }
+  return false;
+}
+
 // SSID抽出（ISRで使える最小限）
 void extractSsid_min(const uint8_t* payload, int len, char* out, uint8_t& outLen) {
   int ieStart = 36;
